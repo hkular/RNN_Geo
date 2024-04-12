@@ -151,3 +151,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 *.npz
+data/rdk_70_30_2afc/feedforward_only/lo_coh/._decode_choice.png
