@@ -86,7 +86,7 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
             acc[ i ] = grid.score( X_test,y_test )
 
         # Evaluate accuracy
-        return decoding_acc = np.mean( acc ) 
+    return decoding_acc = np.mean( acc ) 
         
     else: # if we are decoding each time step, run that in parallel
         
@@ -99,5 +99,5 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
                 ], chunksize = 10)
 
             # Process the results from each worker process (list of lists of accuracies)
-            return decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
+        return decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
             
