@@ -21,6 +21,12 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, labs, label,
     Returns:
       A list of accuracies for each CV fold for the given time step.
     """
+    import numpy as np
+    from sklearn.model_selection import cross_val_score
+    from sklearn.model_selection import RepeatedStratifiedKFold
+    from sklearn.svm import SVC  
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.datasets import make_classification
     acc = []
     for i in range(n_cvs):
         # loop over CV folds within each t_step

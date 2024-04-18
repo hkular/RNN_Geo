@@ -1,7 +1,7 @@
 def fnc_decode_L1(RNN_params, D_params, data_file, task_info):
     '''
 Name: Holly Kular
-Date: 03-19-2024
+Date: 04-19-2024
 Email: hkular@ucsd.edu
 fnc_decode_L1.py
 Description: Script for decoding analysis on layer 1 of probabilistic RNN
@@ -22,6 +22,14 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
 
     data_file: file path for Trials that we want to load
     '''
+    # imports
+    import numpy as np
+    from sklearn.model_selection import cross_val_score
+    from sklearn.model_selection import RepeatedStratifiedKFold
+    from sklearn.svm import SVC  
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.datasets import make_classification
+    from multiprocessing import Pool
     # set up defaults
     prob_split = RNN_params.get('prb_split', '70_30')
     afc = RNN_params.get('afc', 2)
@@ -57,6 +65,8 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
     tris = data_d.shape[0]             # number of trials
     tri_ind = np.arange(0,tris)      # list from 0...tris
     hold_out = int( tris / n_cvs )   # how many trials to hold out
+    # pre-allocate
+    decoding_acc = np.nan
     
     if time_avg: # if we are doing average over time there's no need to run in parallel
         
@@ -86,7 +96,7 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
             acc[ i ] = grid.score( X_test,y_test )
 
         # Evaluate accuracy
-    return decoding_acc = np.mean( acc ) 
+        decoding_acc = np.mean( acc )
         
     else: # if we are decoding each time step, run that in parallel
         
@@ -99,5 +109,6 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
                 ], chunksize = 10)
 
             # Process the results from each worker process (list of lists of accuracies)
-        return decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
+            decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
+    return decoding_acc
             
