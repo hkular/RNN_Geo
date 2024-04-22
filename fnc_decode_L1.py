@@ -24,12 +24,16 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
     '''
     # imports
     import numpy as np
+    import sys
+    import os
+    from fnc_fit_and_score import fnc_fit_and_score
     from sklearn.model_selection import cross_val_score
     from sklearn.model_selection import RepeatedStratifiedKFold
     from sklearn.svm import SVC  
     from sklearn.model_selection import GridSearchCV
     from sklearn.datasets import make_classification
     from multiprocessing import Pool
+    
     # set up defaults
     prob_split = RNN_params.get('prb_split', '70_30')
     afc = RNN_params.get('afc', 2)
@@ -99,16 +103,17 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
         decoding_acc = np.mean( acc )
         
     else: # if we are decoding each time step, run that in parallel
-        
-        if __name__ == "__main__":
 
-            with Pool(processes=round(os.cpu_count()*.7)):  # use 70% of cpus
-                results = pool.starmap(fnc_fit_and_score, [
-                    (t_step, data_d[:, t_step, :], tri_ind, hold_out, n_cvs, labs, label, thresh, grid)
-                    for t_step in range(task_info['trial_dur'])
-                ], chunksize = 10)
+        #if __name__ == "__main__":
+        pool = Pool(processes=round(os.cpu_count() * .7))
+        with pool:  # use 70% of cpus
+            results = pool.starmap(fnc_fit_and_score, [
+                (t_step, data_d[:, t_step, :], tri_ind, hold_out, n_cvs, labs, label, thresh, grid)
+                for t_step in range(task_info['trial_dur'])
+            ], chunksize = 10)
 
-            # Process the results from each worker process (list of lists of accuracies)
-            decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
+    # Process the results from each worker process (list of lists of accuracies)
+        decoding_acc = np.mean(np.array(results), axis=1)  # Calculate mean accuracy for each time step
+
     return decoding_acc
             
