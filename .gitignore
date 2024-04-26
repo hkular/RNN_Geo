@@ -152,3 +152,4 @@ cython_debug/
 #.idea/
 *.npz
 data/rdk_70_30_2afc/feedforward_only/lo_coh/._decode_choice.png
+*.png

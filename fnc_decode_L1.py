@@ -1,4 +1,4 @@
-def fnc_decode_L1(RNN_params, D_params, data_file, task_info):
+def fnc_decode_L1(RNN_params, D_params, data_file, task_info, model):
     '''
 Name: Holly Kular
 Date: 04-19-2024
@@ -43,6 +43,7 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
     time_avg = D_params.get('time_avg', False)
     t_win = D_params.get('t_win', [200, -1])
     label = D_params.get('label', 'stim')
+    units = D_params.get('units', 'all')
     n_cvs = D_params.get('n_cvs', 5)
     num_cgs = D_params.get('num_cgs', 30)
     # penalties to eval
@@ -61,8 +62,15 @@ Description: Script for decoding analysis on layer 1 of probabilistic RNN
     # load data
     data = np.load(data_file)
     
-    # set-up vars for decoding   
-    data_d = data['fr1']# layer 1 firing rate [trial x time step x unit] matrix
+    # set-up vars for decoding
+    if units == 'all':
+        data_d = data['fr1']# layer 1 firing rate [trial x time step x unit] matrix
+    elif units == 'exc':
+        exc = model['exc1'].squeeze()
+        data_d = data['fr1'][:,:,exc==1]
+    elif units == 'inh':
+        inh = model['inh1'].squeeze()
+        data_d = data['fr1'][:,:,inh==1]
     labs = data['labs'].squeeze()
 
     # get some info about structure of the data
