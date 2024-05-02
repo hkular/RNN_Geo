@@ -155,3 +155,5 @@ data/rdk_70_30_2afc/feedforward_only/lo_coh/._decode_choice.png
 *.png
 data/rdk_70_30_6afc/feedforward_only/.DS_Store
 data/rdk_70_30_6afc/.DS_Store
+.virtual_documents/generate_trials.ipynb
+.virtual_documents/decode_L1.ipynb
