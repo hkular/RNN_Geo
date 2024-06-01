@@ -1,4 +1,4 @@
-def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, labs, label, thresh, grid):
+def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, labs, label, thresh, grid):
     """
     Name: Holly Kular\
     Date: 03-19-2024\
@@ -27,7 +27,9 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, labs, label,
     from sklearn.svm import SVC  
     from sklearn.model_selection import GridSearchCV
     from sklearn.datasets import make_classification
-    acc = []
+    from sklearn.metrics import confusion_matrix
+    acc = np.zeros(n_cvs)
+    cm = np.zeros((n_cvs, n_classes))
     for i in range(n_cvs):
         # loop over CV folds within each t_step
         # trials to hold out as test set on this cv fold
@@ -53,7 +55,10 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, labs, label,
         else:
             y_test = np.select([labs[tst_ind] >= thresh[1], labs[tst_ind] <= thresh[0]], [0,1], default=0)
 
-        # predict!
-        score = grid.score( X_test,y_test )
-        acc.append(score)  # Append accuracy for this CV fold
+        # predict and score!
+        y_pred = grid.predict(X_test)
+        #acc[i] += grid.score( X_test,y_test )
+        cm[i] = confusion_matrix(y_test, y_pred, normalize = "true").diagonal()
+    acc = np.mean(cm, axis = 0)
+    
     return acc
