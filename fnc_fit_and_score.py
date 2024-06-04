@@ -22,6 +22,7 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, l
       A list of accuracies for each CV fold for the given time step.
     """
     import numpy as np
+    import matplotlib.pyplot as plt
     from sklearn.model_selection import cross_val_score
     from sklearn.model_selection import RepeatedStratifiedKFold
     from sklearn.svm import SVC  
@@ -58,6 +59,11 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, l
         # predict and score!
         y_pred = grid.predict(X_test)
         #acc[i] += grid.score( X_test,y_test )
+      
+        plt.imshow(confusion_matrix(y_test, y_pred))
+        plt.show()
+
+        
         cm[i] = confusion_matrix(y_test, y_pred, normalize = "true").diagonal()
     acc = np.mean(cm, axis = 0)
     
