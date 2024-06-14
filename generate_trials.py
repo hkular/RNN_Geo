@@ -19,14 +19,8 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 from datetime import datetime
 import sys
-
-# In[2]:
-
-
-# add functions from other notebooks
-get_ipython().run_line_magic('run', 'fnc_generate_trials.ipynb')
-get_ipython().run_line_magic('run', 'fnc_eval_model.ipynb')
-
+import fnc_generate_trials
+import fnc_eval_model
 
 # In[3]:
 
@@ -99,7 +93,7 @@ for tri in range(0, task_info['trials']):
     fr1[tri, :, :] = out['R1']
     fr2[tri, :, :] = out['R2']
     fr3[tri, :, :] = out['R3']
-print(f'done generating trials')
+print(f'{"done generating trials"}')
 
 
 # In[18]:

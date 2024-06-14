@@ -1,10 +1,25 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+#  Name: Robert Kim\
+#  Date: 03-29-2023\
+#  Email: robert.f.kim@gmail.com\
+#  fnc_eval_model.m\
+#  Description: Implementation of rate model
+# 
+# Adapted from .m to .ipynb by Holly Kular\
+# date: 02-15-2024
+# update: 05-30-2024 added .item() to O[t] calculation to comply with numpy 1.25
+
+# INPUT
+#    - model_dir: full path to the trained model
+#    - uu: input signal
+#    - feedback: false or true (interlayer feedback)
+
+# In[19]:
 
 
-
-
-
-
-def fnc_eval_model(model_dir, uu, feedback):
+def fnc_eval_model(model_dir, uu, feedback, loadmat, np):
     
     
     # Load the data first
@@ -101,6 +116,10 @@ def fnc_eval_model(model_dir, uu, feedback):
     out['O'] = O[1:]
                               
     return [out, O]
+
+
+# In[ ]:
+
 
 
 
