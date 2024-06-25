@@ -9,24 +9,20 @@
 
 # In[54]:
 
-
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import RepeatedStratifiedKFold
+import time
 from sklearn.svm import SVC  
 from sklearn.model_selection import GridSearchCV
-from sklearn.datasets import make_classification
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from scipy.optimize import curve_fit
 from scipy.io import loadmat
-from fnc_fit_and_score import fnc_fit_and_score
+from fnc_fit_and_score_r import fnc_fit_and_score_r
 from multiprocessing import Pool
 import sliding_window
-# 
+
 def sliding_window(elements, window_size):
   if len(elements) <= window_size:
     return elements
@@ -55,7 +51,7 @@ D_params = {
     't_win': [130, -1],
     'n_cvs': 5,
     'num_cgs': 30,
-    'label': ['stim'],  # 'stim' or 'choice'
+    'label': 'stim',  # 'stim' or 'choice'
     'units': 'all',  # 'all' or 'exc' or 'inh'
     'pred': 'all'  # 'expected' or 'unexpected', 'all'
 }
@@ -85,109 +81,76 @@ modelnum = RNN_params['model']
 # In[57]:
 
 
-combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'], RNN_params['model']))
+#combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'])) # add model back to combos later
 
-for afc, coh, model in combinations:
-    # Load data
-    if sys.platform.startswith('linux'):
-        data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
-    else:
-        data_dir = f"/Volumes/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
-    
-    # Chose the model
-    mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
-    model_path = os.path.join(data_dir, mat_files[model]) 
-    model = loadmat(model_path) # model.keys()
-    
-    # get the data from layer 1 decode stim
-    # this is a [trial x time step x unit] matrix
-    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_balanced.npz"
-    data = np.load(data_file)
-    data_d = data['fr3']
-    if D_params['label'] == 'stim':
-        labs = data['labs'].squeeze()
-    elif D_params['label'] == 'choice':
-        labs = data['outs'][:,-1]
-    
-    # get some info about structure of the data
-    tris = data_d.shape[0]             # number of trials
-    tri_ind = np.arange(0,tris)      # list from 0...tris
-    hold_out = int( tris / n_cvs )   # how many trials to hold out
-    thresh = RNN_params.get('thresh', [.3, .7])
-    if D_params['label'] == 'stim':
-        n_classes = len(np.unique(labs))
-    else:
-        n_classes = 2
-        
-    if D_params['time_avg'] :
-        data_d = np.mean( data_d[ :,D_params['t_win'][0]:D_params['t_win'][1],: ], axis = 1 ) # average over time window
-        acc = np.zeros(n_cvs)
-        cm = np.zeros((n_cvs, n_classes, n_classes))
-        class_acc = np.zeros((n_cvs, n_classes))
-        # Within each cross-validation fold
-        for i in range(n_cvs):
-    
-            # trials to hold out as test set on this cv fold
-            tst_ind = tri_ind[ i*hold_out : (i+1)*hold_out ]
-    
-            # index into the training data on this cv fold
-            trn_ind = np.setdiff1d( tri_ind, tst_ind )
-    
-            # get the training data (X) and the training labels (y)
-            X = data_d[ trn_ind,: ]
-            if D_params['label'] == 'stim':
-                y = labs[trn_ind]
-            else:
-                y = np.select([labs[trn_ind] >= thresh[1], labs[trn_ind] <= thresh[0]], [0,1], default=0)
-    
-    
-            # Fit the model on the binary labels
-            grid.fit( X, y )
-    
-            # get the test data (X) and the test labels (y)
-            X_test = data_d[tst_ind, :]
-            if D_params['label'] == 'stim':
-                y_test = labs[tst_ind]
-            else:
-                y_test = np.select([labs[tst_ind] >= thresh[1], labs[tst_ind] <= thresh[0]], [0,1], default=0)
-    
-    
-            # predict!
-            y_pred = grid.predict(X_test)
-            score = grid.score( X_test,y_test )
-            acc[i] += score  # Append accuracy for this CV fold
-            # confusion matrix
-            cm[i] += confusion_matrix(y_test, y_pred)
-    
-            # Evaluate accuracy
-            accuracy = np.mean( acc )
-            for cls in range(n_classes):
-                cls_ind = y_test == cls
-                class_acc[i, cls] += (np.sum(y_pred[cls_ind] == cls) / np.sum(cls_ind))
-                
-            
-            # Print overall results
-            #print(f'CV: {i}, {grid.best_estimator_}')
-        print(f'{"done decoding"}')
-        cm_mean = np.mean(cm, axis = 0)
-        exec(f'{coh}_{afc}_stim_all{model}_avg = cm_mean')
-    else:
-    # Do decoding - parallel 
-        times = sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)
-        pool = Pool(processes=round(os.cpu_count() * .8))
-        with pool:  # use 70% of cpus
-            results = pool.starmap(fnc_fit_and_score, [
-                (t, np.mean( data_d[:,t, :], axis = 1 ), tri_ind, hold_out, n_cvs, n_classes, labs, D_params['label'], thresh, grid)
-                for t in times
-            ], chunksize = 10)
-        pool.close()
-        # Process the results from each worker process (list of lists of accuracies)
-        #decoding_acc = np.mean(np.array(results), axis=1)
-        print(f'{"done decoding"}')
-        acc = np.array(results)    
-        exec(f'{coh}_{afc}_stim_all{modelnum} = acc')
-print(f'{"done saving"}')
+# for now just focus on one model
+model = 0
+nboots = 100 # let's just do a few for now
 
+#for afc, coh in combinations:
+afc = 6
+coh = 'hi'
+
+# Load data
+if sys.platform.startswith('linux'):
+    data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
+else:
+    data_dir = f"/Volumes/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
+
+# Chose the model
+mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
+model_path = os.path.join(data_dir, mat_files[model]) 
+model = loadmat(model_path) # model.keys()
+
+# get the data from layer 1 decode stim
+# this is a [trial x time step x unit] matrix
+data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_balanced.npz"
+data = np.load(data_file)
+data_d = data['fr3']
+
+if D_params['label'] == 'stim':
+    labs = data['labs'].squeeze()
+elif D_params['label'] == 'choice':
+    labs = data['outs'][:,-1]
+
+# get some info about structure of the data
+tris = data_d.shape[0]             # number of trials
+tri_ind = np.arange(0,tris)      # list from 0...tris
+hold_out = int( tris / n_cvs )   # how many trials to hold out
+thresh = RNN_params.get('thresh', [.3, .7])
+if D_params['label'] == 'stim':
+    n_classes = len(np.unique(labs))
+else:
+    n_classes = 2
+
+times = sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)  
+acc = np.zeros((nboots, len(times), n_classes))
+    
+# In[]:
+# do bootstraps
+
+def process_bootstrap(n_boot):
+    np.random.seed(n_boot)  # Ensure reproducibility for each bootstrap
+    results = []
+    for t in times:
+        seed = np.random.randint(0, 1000000)  # Unique seed for each time point within the bootstrap
+        result = fnc_fit_and_score_r(t, np.mean(data_d[:, t, :], axis=1), tri_ind, hold_out, n_cvs, n_classes, labs, D_params['label'], thresh, grid, seed)
+        results.append(result)
+    if n_boot % 5 == 0:
+        print(f'done decoding boot: {n_boot}')
+    return results
+# In[]:
+start_time = time.time() 
+if __name__ == "__main__":
+    with Pool(processes=round(os.cpu_count() * .9)) as pool:
+        results = pool.map(process_bootstrap, range(nboots))    
+    acc = np.array(results)
+end_time = time.time()
+print(f"Execution time: {end_time - start_time} seconds")
+
+# In[]:
+
+# get CI over bootstraps
 
 # In[58]:
 

@@ -1,4 +1,4 @@
-def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, labs, label, thresh, grid):
+def fnc_fit_and_score_r(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, labs, label, thresh, grid, seed):
     """
     Name: Holly Kular\
     Date: 03-19-2024\
@@ -22,6 +22,8 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, l
       A list of accuracies for each CV fold for the given time step.
     """
     import numpy as np
+    np.random.seed(seed)  # Initialize the random number generator with the given seed
+    
     import matplotlib.pyplot as plt
     from sklearn.metrics import confusion_matrix
     acc = np.zeros(n_cvs)

@@ -37,12 +37,12 @@ RNN_params = {
     'coh': 'hi',
     'feedback': False,
     'thresh': [.3, .7],
-    'model': 1
+    'model': 2
 }
 
 D_params = {
     'time_avg': True,
-    't_win': [245, 250],
+    't_win': [130,135],#[245, 250],
     'n_cvs': 5,
     'num_cgs': 30,
     'label': 'stim',  # 'stim' or 'choice'
@@ -83,7 +83,7 @@ else:
 
 # Chose the model
 mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
-model_path = os.path.join(data_dir, mat_files[1]) 
+model_path = os.path.join(data_dir, mat_files[RNN_params['model']]) 
 model = loadmat(model_path) # model.keys()
 
 
@@ -96,7 +96,7 @@ model = loadmat(model_path) # model.keys()
 # this is a [trial x time step x unit] matrix
 data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_balanced.npz"
 data = np.load(data_file)
-data_d = data['fr1']
+data_d = data['fr3']
 if D_params['label'] == 'stim':
     labs = data['labs'].squeeze()
 elif D_params['label'] == 'choice':
