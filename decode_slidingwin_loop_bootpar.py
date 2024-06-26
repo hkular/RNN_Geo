@@ -85,11 +85,11 @@ modelnum = RNN_params['model']
 
 # for now just focus on one model
 model = 0
-nboots = 100 # let's just do a few for now
+nboots = 10 # let's just do a few for now
 
 #for afc, coh in combinations:
 afc = 6
-coh = 'hi'
+coh = 'lo'
 
 # Load data
 if sys.platform.startswith('linux'):

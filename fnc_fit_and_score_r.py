@@ -58,8 +58,8 @@ def fnc_fit_and_score_r(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes,
         y_pred = grid.predict(X_test)
         #acc[i] += grid.score( X_test,y_test )
       
-        plt.imshow(confusion_matrix(y_test, y_pred))
-        plt.show()
+        #plt.imshow(confusion_matrix(y_test, y_pred))
+        #plt.show()
 
         
         cm[i] = confusion_matrix(y_test, y_pred, normalize = "true").diagonal()

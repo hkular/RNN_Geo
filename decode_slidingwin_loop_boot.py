@@ -132,7 +132,7 @@ else:
     times = sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)  
     acc = np.zeros((nboots, len(times), n_classes))
     
-# In[]:
+# In[64]:
 # do bootstraps
 
 for n_boot in range(nboots):
@@ -195,7 +195,7 @@ for n_boot in range(nboots):
                 results = pool.starmap(fnc_fit_and_score_r, [
                     (t, np.mean( data_d[:,t, :], axis = 1 ), tri_ind, hold_out, n_cvs, n_classes, labs, D_params['label'], thresh, grid, np.random.randint(0, 1000000))
                     for t in times
-                ], chunksize = 10)
+                ])
             pool.close()
         # Process the results from each worker process (list of lists of accuracies)
         if n_boot % 1 == 0:
