@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
+import time
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.svm import SVC  
@@ -25,7 +26,7 @@ from scipy.optimize import curve_fit
 from scipy.io import loadmat
 from fnc_fit_and_score import fnc_fit_and_score
 from multiprocessing import Pool
-import sliding_window
+#import sliding_window
 # 
 def sliding_window(elements, window_size):
   if len(elements) <= window_size:
@@ -55,7 +56,7 @@ D_params = {
     't_win': [130, -1],
     'n_cvs': 5,
     'num_cgs': 30,
-    'label': ['stim'],  # 'stim' or 'choice'
+    'label': 'stim',  # 'stim' or 'choice'
     'units': 'all',  # 'all' or 'exc' or 'inh'
     'pred': 'all'  # 'expected' or 'unexpected', 'all'
 }
@@ -79,15 +80,14 @@ param_grid = { 'C': Cs, 'kernel': ['linear'] }
 # note that can also specify cv folds here, but I'm doing it by hand below in a loop
 grid = GridSearchCV( SVC(class_weight = 'balanced'),param_grid,refit=True,verbose=0 )
 
-modelnum = RNN_params['model']
 
 
 # In[57]:
-
+start_time = time.time() 
 
 combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'], RNN_params['model']))
 
-for afc, coh, model in combinations:
+for afc, coh, modelnum in combinations:
     # Load data
     if sys.platform.startswith('linux'):
         data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
@@ -96,12 +96,12 @@ for afc, coh, model in combinations:
     
     # Chose the model
     mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
-    model_path = os.path.join(data_dir, mat_files[model]) 
+    model_path = os.path.join(data_dir, mat_files[modelnum]) 
     model = loadmat(model_path) # model.keys()
     
     # get the data from layer 1 decode stim
     # this is a [trial x time step x unit] matrix
-    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_balanced.npz"
+    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_1unexpected.npz"
     data = np.load(data_file)
     data_d = data['fr3']
     if D_params['label'] == 'stim':
@@ -174,26 +174,26 @@ for afc, coh, model in combinations:
     else:
     # Do decoding - parallel 
         times = sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)
-        pool = Pool(processes=round(os.cpu_count() * .8))
-        with pool:  # use 70% of cpus
+        pool = Pool(processes=round(os.cpu_count() * .9))
+        with pool:  
             results = pool.starmap(fnc_fit_and_score, [
-                (t, np.mean( data_d[:,t, :], axis = 1 ), tri_ind, hold_out, n_cvs, n_classes, labs, D_params['label'], thresh, grid)
+                (np.mean( data_d[:,t, :], axis = 1 ), tri_ind, hold_out, n_cvs, n_classes, labs, D_params['label'], thresh, grid)
                 for t in times
-            ], chunksize = 10)
+            ])
         pool.close()
         # Process the results from each worker process (list of lists of accuracies)
         #decoding_acc = np.mean(np.array(results), axis=1)
-        print(f'{"done decoding"}')
+        print(f'done decoding {afc} {coh} {model}')
         acc = np.array(results)    
         exec(f'{coh}_{afc}_stim_all{modelnum} = acc')
 print(f'{"done saving"}')
 
-
+end_time = time.time()
 # In[58]:
 
 
-full_file = f'/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/fr3/results_balanced_all{modelnum}.npz'
-np.savez(full_file, lo_2_stim_all2 = lo_2_stim_all2, lo_6_stim_all2 = lo_6_stim_all2, hi_2_stim_all2 = hi_2_stim_all2, hi_6_stim_all2 = hi_6_stim_all2, lo_2_choice_all2 = lo_2_choice_all2, lo_6_choice_all2 = lo_6_choice_all2, hi_2_choice_all2 = hi_2_choice_all2, hi_6_choice_all2 = hi_6_choice_all2)
+full_file = f'/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/fr1/results_unexpected_all_allmodels.npz'
+np.savez(full_file, lo_2_stim_all2 = lo_2_stim_all2, lo_6_stim_all2 = lo_6_stim_all2, hi_2_stim_all2 = hi_2_stim_all2, hi_6_stim_all2 = hi_6_stim_all2, lo_2_stim_all1 = lo_2_stim_all1, lo_6_stim_all1 = lo_6_stim_all1, hi_2_stim_all1 = hi_2_stim_all1, hi_6_stim_all1 = hi_6_stim_all1, lo_2_stim_all0 = lo_2_stim_all0, lo_6_stim_all0 = lo_6_stim_all0, hi_2_stim_all0 = hi_2_stim_all0, hi_6_stim_all0 = hi_6_stim_all0) #, lo_2_choice_all2 = lo_2_choice_all2, lo_6_choice_all2 = lo_6_choice_all2, hi_2_choice_all2 = hi_2_choice_all2, hi_6_choice_all2 = hi_6_choice_all2)
 print(f'{"done saving"}')
 
 
@@ -201,8 +201,8 @@ print(f'{"done saving"}')
 
 
 # load and graph
-full_file = '/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/results_stim_balanced_all1.npz'
-accs1 = np.load(full_file)
+full_file = '/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/fr1/results_unexpected_all_allmodels.npz'
+accs = np.load(full_file)
 
 
 # In[53]:
@@ -212,10 +212,10 @@ accs1 = np.load(full_file)
 fig, axs = plt.subplots(1,2, figsize=(12, 8))
 
 # Plot 1
-axs[0].plot(accs1['hi_6_stim_all1'][:,0], color='blue', label='6afc exp')
-axs[0].plot(np.mean(accs1['hi_6_stim_all1'][:,1:5], axis = 1), color='red',  label='6fac unexp')
-axs[0].plot(accs1['hi_2_stim_all1'][:,0], color='blue',alpha=0.4, label='2afc exp')
-axs[0].plot(np.mean(accs1['hi_2_stim_all1'][:,1:2], axis = 1), color='red', alpha=0.4, label='2afc unexp')
+axs[0].plot(accs['hi_6_stim_all1'][:,0], color='blue', label='6afc exp')
+axs[0].plot(np.mean(accs['hi_6_stim_all1'][:,1:5], axis = 1), color='red',  label='6fac unexp')
+axs[0].plot(accs['hi_2_stim_all1'][:,0], color='blue',alpha=0.4, label='2afc exp')
+axs[0].plot(np.mean(accs['hi_2_stim_all1'][:,1:2], axis = 1), color='red', alpha=0.4, label='2afc unexp')
 axs[0].set_xlabel('Time after stimulus offset')
 axs[0].set_ylabel('Decoding Accuracy')
 axs[0].set_title('Decoding Stimulus, hi coh')
@@ -223,10 +223,10 @@ axs[0].set_ylim(0, 1)
 axs[0].legend()
 
 # Plot 2
-axs[1].plot(accs1['lo_6_stim_all1'][:,0], color='blue', label='6afc exp')
-axs[1].plot(np.mean(accs1['lo_6_stim_all1'][:,1:5], axis = 1), color='red',  label='6fac unexp')
-axs[1].plot(accs1['lo_2_stim_all1'][:,0], color='blue',alpha = 0.4, label='2afc exp')
-axs[1].plot(np.mean(accs1['lo_2_stim_all1'][:,1:2], axis = 1), color='red', alpha=0.4, label='2afc unexp')
+axs[1].plot(accs['lo_6_stim_all1'][:,0], color='blue', label='6afc exp')
+axs[1].plot(np.mean(accs['lo_6_stim_all1'][:,1:5], axis = 1), color='red',  label='6fac unexp')
+axs[1].plot(accs['lo_2_stim_all1'][:,0], color='blue',alpha = 0.4, label='2afc exp')
+axs[1].plot(np.mean(accs['lo_2_stim_all1'][:,1:2], axis = 1), color='red', alpha=0.4, label='2afc unexp')
 axs[1].set_xlabel('Time after stimulus offset')
 axs[1].set_ylabel('Decoding Accuracy')
 axs[1].set_title('Decoding Stimulus, lo coh')
@@ -237,7 +237,7 @@ axs[1].legend()
 plt.tight_layout()
 plt.rcParams.update({'font.size': 12})
 
-plt.savefig(f"{'/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/stim_all1_plots_06032024.png'}")
+#plt.savefig(f"{'/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/stim_all1_plots_06032024.png'}")
 
 
 # In[52]:

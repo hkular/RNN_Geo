@@ -66,7 +66,7 @@ task_info['units'] = 200 # number of units
 # NOTE: adjust pred and primary_prob to change the testing environement
 # Ex. Evenly distributed 6-AFC => task_info.primary_prob = 1/6;
 # Ex. pred=5 and primary_prob = 0.7 => stim "5" will be predominant (70% of the time)
-task_info['pred'] = 1 # predominant stimulus is "1"
+task_info['pred'] = 1 # predominant stimulus is "1" aka 0
 task_info['primary_prob'] = 0.70; # 70-30 split
 
 

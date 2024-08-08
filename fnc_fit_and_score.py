@@ -1,4 +1,4 @@
-def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, labs, label, thresh, grid):
+def fnc_fit_and_score(data_slice, tri_ind, hold_out, n_cvs, n_classes, labs, label, thresh, grid):
     """
     Name: Holly Kular\
     Date: 03-19-2024\
@@ -21,26 +21,23 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, l
     Returns:
       A list of accuracies for each CV fold for the given time step.
     """
-    import numpy as np
-    import matplotlib.pyplot as plt
+    from numpy import setdiff1d, zeros, mean, select
     from sklearn.metrics import confusion_matrix
-    acc = np.zeros(n_cvs)
-    cm = np.zeros((n_cvs, n_classes))
+    acc = zeros(n_cvs)
+    cm = zeros((n_cvs, n_classes))
     for i in range(n_cvs):
-        # loop over CV folds within each t_step
         # trials to hold out as test set on this cv fold
         tst_ind = tri_ind[ i*hold_out : (i+1)*hold_out ]
         
         # index into the training data on this cv fold
-        sample = np.setdiff1d( tri_ind, tst_ind )
-        trn_ind = np.random.choice(sample, size = len(sample), replace = True)
+        trn_ind = trn_ind = setdiff1d( tri_ind, tst_ind )
 
         # get the training data (X) and the training labels (y)
         X = data_slice[trn_ind,:]
         if label == 'stim':
             y = labs[trn_ind]
         else:
-            y = np.select([labs[trn_ind] >= thresh[1], labs[trn_ind] <= thresh[0]], [0,1], default=0)
+            y = select([labs[trn_ind] >= thresh[1], labs[trn_ind] <= thresh[0]], [0,1], default=0)
 
         # fit the model
         grid.fit( X,y )
@@ -50,17 +47,12 @@ def fnc_fit_and_score(t_step, data_slice, tri_ind, hold_out, n_cvs, n_classes, l
         if label == 'stim':
             y_test = labs[tst_ind]
         else:
-            y_test = np.select([labs[tst_ind] >= thresh[1], labs[tst_ind] <= thresh[0]], [0,1], default=0)
+            y_test = select([labs[tst_ind] >= thresh[1], labs[tst_ind] <= thresh[0]], [0,1], default=0)
 
         # predict and score!
         y_pred = grid.predict(X_test)
-        #acc[i] += grid.score( X_test,y_test )
-      
-        #plt.imshow(confusion_matrix(y_test, y_pred))
-        #plt.show()
-
-        
+        #acc[i] += grid.score( X_test,y_test )   
         cm[i] = confusion_matrix(y_test, y_pred, normalize = "true").diagonal()
-    acc = np.mean(cm, axis = 0)
+    acc = mean(cm, axis = 0)
     
     return acc
