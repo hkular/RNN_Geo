@@ -8,7 +8,6 @@ __pycache__/
 
 # Mac hidden files
 ._*
-.*
 
 # Distribution / packaging
 .Python
