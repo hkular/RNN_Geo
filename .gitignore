@@ -9,6 +9,10 @@ __pycache__/
 # Mac hidden files
 ._*
 
+# data directory
+Data/
+data/
+
 # Distribution / packaging
 .Python
 build/
