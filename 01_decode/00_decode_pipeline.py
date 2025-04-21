@@ -14,14 +14,11 @@ import os
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import time
 from sklearn.svm import SVC  
 from sklearn.model_selection import GridSearchCV
 from scipy.io import loadmat
-from multiprocessing import Pool
 from sklearn.metrics import confusion_matrix
-
 
 # In[2]:
 
@@ -56,7 +53,7 @@ task_info = {
 window = 50 # size of time window to get sliding avg
 
 
-# In[ ]:
+# In[3]:
 
 
 # Define SVM 
@@ -71,10 +68,10 @@ param_grid = { 'C': Cs, 'kernel': ['linear'] }
 
 # define object - use a SVC that balances class weights (because they are biased, e.g. 70/30)
 # note that can also specify cv folds here, but I'm doing it by hand below
-grid = GridSearchCV( SVC(class_weight = 'balanced'),param_grid,refit=True,verbose=0, n_jobs = -1)
+grid = GridSearchCV( SVC(class_weight = 'balanced'),param_grid,refit=True,verbose=0, n_jobs = math.floor(os.cpu_count() * 0.7))
 
 
-# In[ ]:
+# In[4]:
 
 
 # Define custom funcs
@@ -151,62 +148,99 @@ def fnc_fit_and_score(data_slice, tri_ind, hold_out, n_cvs, afc, labs, label, th
     return acc
 
 
-
-# In[ ]:
+# In[5]:
 
 
 # Now actually do decoding across conditions
-
+fr = 2
 modelnum = 1 # which model do we want ranges 0 to 2?
-nboots = 2 # how many boot strap samples do we want?
+nboots = 1000 # how many boot strap samples do we want?
 
-combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'], RNN_params['fr']))
+combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh']))
 
-#for afc, coh, fr in combinations:
-afc = 2
-coh = 'hi'
-fr = 1
+for afc, coh in combinations:
+
+
+    # Load data
+    data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
+    mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
+    model_path = os.path.join(data_dir, mat_files[modelnum]) 
+    model = loadmat(model_path)   
+    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_{D_params['pred']}.npz"
+    data = np.load(data_file)
+    data_d = data[f'fr{fr}'] # this is a [trial x time step x unit] matrix
+    labs = data['labs'].squeeze() # [trial x time step]
     
-
-# Load data
-data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
-mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
-model_path = os.path.join(data_dir, mat_files[modelnum]) 
-model = loadmat(model_path)   
-data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_{D_params['pred']}.npz"
-data = np.load(data_file)
-data_d = data[f'fr{fr}'] # this is a [trial x time step x unit] matrix
-labs = data['labs'].squeeze() # [trial x time step]
-
-# get some info about structure of the data
-tris = data_d.shape[0]             # number of trials
-tri_ind = np.arange(0,tris)      # list from 0...tris
-hold_out = int( tris / n_cvs )   # how many trials to hold out
-thresh = RNN_params.get('thresh', [.3, .7])
-
-times = fnc_sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)  
-acc = np.zeros((nboots, len(times), afc))
-
-
-start_time = time.time() 
-
-for i in range(nboots):
-    results = fnc_decode_times(times, i, task_info, data_d, tri_ind, hold_out, n_cvs, afc, labs, D_params, thresh, grid)
-    acc[i, : , :] = results
-
-#if __name__ == "__main__":
-#    with Pool(processes=round(os.cpu_count() * .9)) as pool:
-#        results = pool.map(fnc_decode_times, range(nboots))    
-#    acc = np.array(results)
-end_time = time.time()
-print(f"Execution time: {end_time - start_time} seconds")
-
-# full_file = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/{D_params['pred']}/fr{fr}/{coh}_{afc}afc/boot_{D_params['pred']}_all{modelnum}_{D_params['label']}.npz"
-# np.savez(full_file, acc = results)
-# print(f'done saving {full_file}')
+    # get some info about structure of the data
+    tris = data_d.shape[0]             # number of trials
+    tri_ind = np.arange(0,tris)      # list from 0...tris
+    hold_out = int( tris / n_cvs )   # how many trials to hold out
+    thresh = RNN_params.get('thresh', [.3, .7])
+    
+    times = fnc_sliding_window(range(task_info['stim_dur']+task_info['stim_on'],task_info['trial_dur']), window)  
+    acc = np.zeros((nboots, len(times), afc))
+    
+    
+    start_time = time.time() 
+    
+    for i in range(nboots):
+        results = fnc_decode_times(times, i, task_info, data_d, tri_ind, hold_out, n_cvs, afc, labs, D_params, thresh, grid)
+        acc[i, : , :] = results
+    
+    #if __name__ == "__main__":
+    #    with Pool(processes=round(os.cpu_count() * .9)) as pool:
+    #        results = pool.map(decode_wrapper, range(nboots))    
+    #    acc = np.array(results)
+    
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
+    
+    full_file = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/{D_params['pred']}/fr{fr}/{coh}_{afc}afc/boot_{D_params['pred']}_all{modelnum}_{D_params['label']}.npz"
+    np.savez(full_file, acc)
+    print(f'done saving {full_file}')
 
 
-# In[ ]:
+# mod 0 in progress for fr2 looping over afc and coh
+
+
+# In[6]:
+# quick plot to check
+from scipy.stats import sem
+
+
+# get CI over bootstraps
+y_data = np.mean(acc[:, :, 1:], axis = 2)
+
+# Calculate the mean over axis 0
+mean_y = np.mean(y_data, axis=0)
+
+# Calculate the standard error of the mean (SEM)
+sem_y = sem(y_data, axis=0)
+
+# Define the confidence interval (95%)
+confidence_interval = 1.96 * sem_y
+
+# Define the x-axis data
+x_data = np.arange(y_data.shape[1])
+
+# Plotting
+#plt.figure(figsize=(10, 6))
+
+# Plot the mean line
+plt.plot(x_data, mean_y, label='Mean', color='blue')
+
+# Plot the confidence interval as a ribbon
+plt.fill_between(x_data, mean_y - confidence_interval, mean_y + confidence_interval, color='blue', alpha=0.3, label='95% CI')
+
+# Labels and title
+plt.xlabel('time steps')
+plt.ylabel('Decoding accuracy')
+plt.title(f'{afc} afc {coh} coh')
+plt.legend()
+
+# Show plot
+plt.show()
+
 
 
 

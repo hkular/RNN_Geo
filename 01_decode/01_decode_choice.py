@@ -11,15 +11,15 @@
 
 # imports
 import os
-import itertools
+#import itertools
 import numpy as np
-import matplotlib.pyplot as plt
-import sys
+#import matplotlib.pyplot as plt
+#import sys
 import time
 from sklearn.svm import SVC  
 from sklearn.model_selection import GridSearchCV
 from scipy.io import loadmat
-from multiprocessing import Pool
+#from multiprocessing import Pool
 from sklearn.metrics import confusion_matrix
 
 
@@ -43,9 +43,9 @@ D_params = {
     't_win': [130, -1],
     'n_cvs': 3,
     'num_cgs': 15,
-    'label': 'choice',  
+    'label': 'stim',  # stim or choice
     'units': 'all',  # 'all' or 'exc' or 'inh'
-    'pred': 'expected'  # 'expected' or 'unexpected', 'neutral'
+    'pred': 'neutral'  # 'expected' or 'unexpected', 'neutral'
 }
 # Timing of task
 task_info = {
@@ -73,7 +73,7 @@ param_grid = { 'C': Cs, 'kernel': ['linear'] }
 
 # define object - use a SVC that balances class weights (because they are biased, e.g. 70/30)
 # note that can also specify cv folds here, but I'm doing it by hand below
-grid = GridSearchCV( SVC(class_weight = 'balanced'),param_grid,refit=True,verbose=0, n_jobs = -1 )
+grid = GridSearchCV( SVC(class_weight = 'balanced'),param_grid,refit=True,verbose=0, n_jobs = os.cpu_count() -4 )
 
 
 # In[ ]:
@@ -156,26 +156,36 @@ def fnc_fit_and_score(data_slice, tri_ind, hold_out, n_cvs, afc, labs, label, th
 
 # In[ ]:
 
+    
+#### check list
+    # 2 afc lo coh fr2 mod 0 - done
+    # 2 afc hi coh fr2 mod 0 - done
+    # 6 afc hi coh fr2 mod 012 - done
+    # 6 afc lo coh fr2 mod 012 - ip
+
 
 # Now actually do decoding across conditions
 
-modelnum = [0, 1, 2] # which model do we want ranges 0 to 2?
+
 nboots = 1000 # how many boot strap samples do we want?
 
-combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'], RNN_params['fr'], modelnum))
+#combinations = list(itertools.product(RNN_params['afc'], RNN_params['coh'], RNN_params['fr'], modelnum))
 
-for afc, coh, fr, modelnum in combinations:
-# afc = 6
-# coh = 'lo'
-# fr = 1
+#for afc, coh, fr, modelnum in combinations:
+for modelnum in range(0,3):
+    print(f'Starting model:{modelnum}')
+    afc = 6
+    coh = 'hi'
+    fr = 2
+    #modelnum = 0
+        
     
-
-# Load data
+    # Load data
     data_dir = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/rdk_{RNN_params['prob_split']}_{afc}afc/feedforward_only/{coh}_coh"
     mat_files = [f for f in os.listdir(data_dir) if f.endswith('.mat')]# Get all the trained models (should be 40 .mat files)
     model_path = os.path.join(data_dir, mat_files[modelnum]) 
     model = loadmat(model_path)   
-    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_0{D_params['pred']}.npz"
+    data_file = f"{data_dir}/Trials{task_info['trials']}_model{model_path[-7:-4]}_{D_params['pred']}.npz"
     data = np.load(data_file)
     data_d = data[f'fr{fr}'] # this is a [trial x time step x unit] matrix
     labs = data['outs'][:,-1] # [trial x time step] choice is outs
@@ -195,7 +205,7 @@ for afc, coh, fr, modelnum in combinations:
     for i in range(nboots):
         results = fnc_decode_times(times, i, task_info, data_d, tri_ind, hold_out, n_cvs, afc, labs, D_params, thresh, grid)
         acc[i, : , :] = results
-
+    
     
     #if __name__ == "__main__":
     #    with Pool(processes=round(os.cpu_count() * .9)) as pool:
@@ -204,11 +214,46 @@ for afc, coh, fr, modelnum in combinations:
     end_time = time.time()
     print(f"Execution time: {end_time - start_time} seconds")
             
-    full_file = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/{D_params['pred']}/fr{fr}/{coh}_{afc}afc/boot__all{modelnum}_{D_params['label']}.npz"
+    full_file = f"/mnt/neurocube/local/serenceslab/holly/RNN_Geo/data/decoding/{D_params['pred']}/fr{fr}/{coh}_{afc}afc/boot_neutral_mod{modelnum}.npz"
     np.savez(full_file, acc = acc)
-   
+       
     print(f'done saving {full_file}')
 
 
 # In[ ]:
+# quick plot to check
+from scipy.stats import sem, t
+import matplotlib.pyplot as plt
 
+# get CI over bootstraps
+y_data = np.mean(acc[:, :, 1:], axis = 2)
+
+# Calculate the mean over axis 0
+mean_y = np.mean(y_data, axis=0)
+
+# Calculate the standard error of the mean (SEM)
+sem_y = sem(y_data, axis=0)
+
+# Define the confidence interval (95%)
+confidence_interval = 1.96 * sem_y
+
+# Define the x-axis data
+x_data = np.arange(y_data.shape[1])
+
+# Plotting
+#plt.figure(figsize=(10, 6))
+
+# Plot the mean line
+plt.plot(x_data, mean_y, label='Mean', color='blue')
+
+# Plot the confidence interval as a ribbon
+plt.fill_between(x_data, mean_y - confidence_interval, mean_y + confidence_interval, color='blue', alpha=0.3, label='95% CI')
+
+# Labels and title
+plt.xlabel('time steps')
+plt.ylabel('Decoding accuracy')
+plt.title(f'{afc} afc {coh} coh')
+plt.legend()
+
+# Show plot
+plt.show()

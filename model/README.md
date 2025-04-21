@@ -1,6 +1,6 @@
-# Probrnn (2022 Reproduction Environment)
+# Probrnn (TensorFlow 2.0 version)
 
-This repository contains the code and environment necessary to reproduce a deep learning experiment originally built in 2022 using TensorFlow 1.10 and CUDA 9.2.
+This repository contains the code and environment necessary to reproduce a deep learning experiment originally built in 2022 using TensorFlow 1.10. HK has since upgraded the code for Tensorflow 2.0. 
 
 All dependencies are packaged in a Docker container for easy setup and long-term reproducibility.
 
@@ -10,11 +10,11 @@ All dependencies are packaged in a Docker container for easy setup and long-term
 
 ├── Dockerfile # Defines the full software environment
  ├── requirements.txt # Python package dependencies
- ├── probrnn_env.yml # Original Conda environment (for reference)
- ├── rmodel_loop.py # Wrapper script! Run this to train RNN and edit params.
- ├── model_feedback_varying_rdk_lo_coh.py # Python script specifying RNN structure
- ├── main_feedback_varying_rdk_lo_coh.py # Python script specifying RNN training
- ├── utils.py # Python script specifying RNN structure   
+ ├── probrnn_env2.yml # Original Conda environment (for reference)
+ ├── runmodel_loop.py # Wrapper script! Run this to train RNN and edit training params.
+ ├── model_feedback_v2.py # Python script specifying RNN structure
+ ├── main_feedback_v2.py # Python script specifying RNN training
+ ├── utils_v2.py # Python script specifying RNN structure   
  └── README.md # You're here!
 
 
@@ -36,13 +36,13 @@ nvidia-smi
 
 
 ### 2. Build the Docker Image
-docker build -t probrnn:2022
+docker build -t probrnn:2025
 
 ### 3. Run the Container
-docker run --gpus all -it probrnn:2022
+docker run --gpus all -it probrnn:2025
 
 ### 4. Run the Training Script
-python rmodel_loop.py
+python runmodel_loop.py
 
 
 
