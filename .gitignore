@@ -25,7 +25,8 @@ data/
 # images
 *.png
 
-
+# CEBRA models
+*.pt
 
 # C extensions
 *.so
