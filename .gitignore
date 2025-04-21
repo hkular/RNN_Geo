@@ -11,15 +11,6 @@ reprobrnn/
 decoding_analysis_share/
 decondanda/
 images/
-00_make_trials/images/
-01_decode/old/
-03_tuning/images/
-02_make_figures/images/
-04_PCA/images/
-05_CEBRA/images/
-05_CEBRA/cebra_models/
-06_cross_temp_decoding/images/
-07_euclid_distance/images/
 data/
 
 # images
