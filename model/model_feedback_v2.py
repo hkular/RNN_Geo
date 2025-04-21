@@ -127,6 +127,41 @@ class FR_RNN_dale(tf.keras.Model): # updated TF1 to TF2, now its a TF2 model
         self.W1, self.mask1, self.W2, self.mask2, self.W3, self.mask3, \
                 self.W21, self.w21_mask, self.W32, self.w32_mask, \
                 self.W12, self.w12_mask, self.W23, self.w23_mask, self.som_mask = self.initialize_W()
+        
+        # # Recast masks as non-trainable weights
+        # self.mask1 = self.add_weight("mask1", shape=self.mask1.shape,
+        #                             initializer=tf.constant_initializer(self.mask1),
+        #                             trainable=False, dtype=tf.float32)
+
+        # self.mask2 = self.add_weight("mask2", shape=self.mask2.shape,
+        #                             initializer=tf.constant_initializer(self.mask2),
+        #                             trainable=False, dtype=tf.float32)
+
+        # self.mask3 = self.add_weight("mask3", shape=self.mask3.shape,
+        #                             initializer=tf.constant_initializer(self.mask3),
+        #                             trainable=False, dtype=tf.float32)
+
+        # self.w21_mask = self.add_weight("w21_mask", shape=self.w21_mask.shape,
+        #                                 initializer=tf.constant_initializer(self.w21_mask),
+        #                                 trainable=False, dtype=tf.float32)
+
+        # self.w12_mask = self.add_weight("w12_mask", shape=self.w12_mask.shape,
+        #                                 initializer=tf.constant_initializer(self.w12_mask),
+        #                                 trainable=False, dtype=tf.float32)
+
+        # self.w32_mask = self.add_weight("w32_mask", shape=self.w32_mask.shape,
+        #                                 initializer=tf.constant_initializer(self.w32_mask),
+        #                                 trainable=False, dtype=tf.float32)
+
+        # self.w23_mask = self.add_weight("w23_mask", shape=self.w23_mask.shape,
+        #                                 initializer=tf.constant_initializer(self.w23_mask),
+        #                                 trainable=False, dtype=tf.float32)
+
+        # self.som_mask = self.add_weight("som_mask", shape=self.som_mask.shape,
+        #                                 initializer=tf.constant_initializer(self.som_mask),
+        #                                 trainable=False, dtype=tf.float32)
+
+
 
     def assign_exc_inh(self):
         """
@@ -532,9 +567,9 @@ class FR_RNN_dale(tf.keras.Model): # updated TF1 to TF2, now its a TF2 model
             self.w12_0 = w12[0]
             self.w23_0 = w23[0]
 
-            self.taus_gaus1_0 = self.taus_gaus1[0]
-            self.taus_gaus2_0 = self.taus_gaus2[0]
-            self.taus_gaus3_0 = self.taus_gaus3[0]
+            self.taus_gaus1_0 = self.taus_gaus1[0, :]
+            self.taus_gaus2_0 = self.taus_gaus2[0, :]
+            self.taus_gaus3_0 = self.taus_gaus3[0, :]
 
             self.w_in0 = self.w_in[0]
 

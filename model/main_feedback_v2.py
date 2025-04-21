@@ -264,7 +264,7 @@ def loss_op(o, z, training_params):
     if loss_fn == 'l1':
         loss = tf.reduce_sum(tf.abs(o - z))
     elif loss_fn == 'l2':
-        loss = tf.reduce_mean(tf.square(o - z))
+        loss = tf.reduce_mean(tf.square(o - z)) # Maybe change to make like TF1.0 version
     else:
         raise ValueError(f"Unsupported loss function: {loss_fn}")
 
@@ -376,7 +376,7 @@ if args.mode.lower() == 'train':
                     eval_u, eval_label = generate_input_stim_rdk_80_20(settings)
                     eval_target = generate_target_continuous_rdk(settings, eval_label)
                     eval_stim_tensor = tf.convert_to_tensor(eval_u, dtype=tf.float32)
-                    eval_target_tensor = tf.convert_to_tensory(eval_target[1:], dtype=tf.float32)
+                    eval_target_tensor = tf.convert_to_tensor(eval_target[1:], dtype=tf.float32)
                     eval_target_tensor = tf.squeeze(eval_target_tensor)
                     eval_o = net(eval_stim_tensor)
                     eval_o = tf.squeeze(eval_o).numpy()
@@ -394,7 +394,7 @@ if args.mode.lower() == 'train':
 
                 eval_perf_mean = np.nanmean(eval_perf, 1)
                 eval_loss_mean = np.nanmean(eval_losses, 1)
-                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean, eval_loss_mean))
+                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean.item(), eval_loss_mean.item()))
 
                 # if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
                 if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
@@ -415,7 +415,7 @@ if args.mode.lower() == 'train':
                     eval_u, eval_label = generate_input_stim_rdk_equal(settings)
                     eval_target = generate_target_continuous_rdk(settings, eval_label)
                     eval_stim_tensor = tf.convert_to_tensor(eval_u, dtype=tf.float32)
-                    eval_target_tensor = tf.convert_to_tensory(eval_target[1:], dtype=tf.float32)
+                    eval_target_tensor = tf.convert_to_tensor(eval_target[1:], dtype=tf.float32)
                     eval_target_tensor = tf.squeeze(eval_target_tensor)
                     eval_o = net(eval_stim_tensor)
                     eval_o = tf.squeeze(eval_o).numpy()
@@ -433,7 +433,7 @@ if args.mode.lower() == 'train':
 
                 eval_perf_mean = np.nanmean(eval_perf, 1)
                 eval_loss_mean = np.nanmean(eval_losses, 1)
-                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean, eval_loss_mean))
+                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean.item(), eval_loss_mean.item()))
 
                 # if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
                 if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
@@ -454,7 +454,7 @@ if args.mode.lower() == 'train':
                     eval_u, eval_label = generate_input_stim_rdk_70_30_6AFC(settings)
                     eval_target = generate_target_continuous_rdk(settings, eval_label)
                     eval_stim_tensor = tf.convert_to_tensor(eval_u, dtype=tf.float32)
-                    eval_target_tensor = tf.convert_to_tensory(eval_target[1:], dtype=tf.float32)
+                    eval_target_tensor = tf.convert_to_tensor(eval_target[1:], dtype=tf.float32)
                     eval_target_tensor = tf.squeeze(eval_target_tensor)
                     eval_o = net(eval_stim_tensor)
                     eval_o = tf.squeeze(eval_o).numpy()
@@ -472,7 +472,7 @@ if args.mode.lower() == 'train':
 
                 eval_perf_mean = np.nanmean(eval_perf, 1)
                 eval_loss_mean = np.nanmean(eval_losses, 1)
-                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean, eval_loss_mean))
+                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean.item(), eval_loss_mean.item()))
 
                 # if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
                 if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
@@ -493,7 +493,7 @@ if args.mode.lower() == 'train':
                     eval_u, eval_label = generate_input_stim_rdk_80_20_6AFC(settings)
                     eval_target = generate_target_continuous_rdk(settings, eval_label)
                     eval_stim_tensor = tf.convert_to_tensor(eval_u, dtype=tf.float32)
-                    eval_target_tensor = tf.convert_to_tensory(eval_target[1:], dtype=tf.float32)
+                    eval_target_tensor = tf.convert_to_tensor(eval_target[1:], dtype=tf.float32)
                     eval_target_tensor = tf.squeeze(eval_target_tensor)
                     eval_o = net(eval_stim_tensor)
                     eval_o = tf.squeeze(eval_o).numpy()
@@ -511,7 +511,7 @@ if args.mode.lower() == 'train':
 
                 eval_perf_mean = np.nanmean(eval_perf, 1)
                 eval_loss_mean = np.nanmean(eval_losses, 1)
-                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean, eval_loss_mean))
+                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean.item(), eval_loss_mean.item()))
 
                 # if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
                 if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
@@ -532,7 +532,7 @@ if args.mode.lower() == 'train':
                     eval_u, eval_label = generate_input_stim_rdk_equal_6AFC(settings)
                     eval_target = generate_target_continuous_rdk(settings, eval_label)
                     eval_stim_tensor = tf.convert_to_tensor(eval_u, dtype=tf.float32)
-                    eval_target_tensor = tf.convert_to_tensory(eval_target[1:], dtype=tf.float32)
+                    eval_target_tensor = tf.convert_to_tensor(eval_target[1:], dtype=tf.float32)
                     eval_target_tensor = tf.squeeze(eval_target_tensor)
                     eval_o = net(eval_stim_tensor)
                     eval_o = tf.squeeze(eval_o).numpy()
@@ -550,7 +550,7 @@ if args.mode.lower() == 'train':
 
                 eval_perf_mean = np.nanmean(eval_perf, 1)
                 eval_loss_mean = np.nanmean(eval_losses, 1)
-                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean, eval_loss_mean))
+                print("Perf: %.2f, Loss: %.2f"%(eval_perf_mean.item(), eval_loss_mean.item()))
 
                 # if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
                 if eval_loss_mean < training_params['loss_threshold'] and eval_perf_mean > 0.85 and tr > 5000:
@@ -560,8 +560,8 @@ if args.mode.lower() == 'train':
                     break
 
         elapsed_time = time.time() - start_time
-        # print(elapsed_time)
-if training_success == True:
+        
+    
     # Save the trained params in a .mat file
     var = {}
     var['x1_0'] = net.x1_0
@@ -614,8 +614,8 @@ if training_success == True:
     var['som_N'] = net.som_N
     var['losses'] = losses
     var['taus'] = settings['taus']
-    var['eval_perf_mean'] = eval_perf_mean
-    var['eval_loss_mean'] = eval_loss_mean
+    var['eval_perf_mean'] = eval_perf_mean.item()
+    var['eval_loss_mean'] = eval_loss_mean.item()
     var['eval_os'] = eval_os
     var['eval_labels'] = eval_labels
     var['taus_gaus1'] = net.taus_gaus1.numpy()
@@ -635,6 +635,4 @@ if training_success == True:
     full_filepath = os.path.join(out_dir, fname) #Create the full filepath
     scipy.io.savemat(full_filepath, var)
     print(f"Saving file: {full_filepath}") # Print the full filepath that is being saved.
-else:
-    print(f"Breaking early at trial {tr}: Loss = {eval_loss_mean:.4f}, Perf = {eval_perf_mean:.2f}")
-
+    print(f"elapsed time: {elapsed_time}")
